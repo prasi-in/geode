@@ -6586,7 +6586,7 @@ public class PartitionedRegion extends LocalRegion
 
   /**
    * Returns the lockname used by Distributed Lock service to clean the
-   * {@code allPartitionedRegions{@code
+   * {@code allPartitionedRegions}.
    *
    * @return String
    */

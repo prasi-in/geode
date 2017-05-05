@@ -138,6 +138,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * The buffer upon which we receive messages
    */
   private final ByteBuffer commBuffer;
+
   private boolean commBufferReleased;
 
   private final CCUStats stats;
@@ -146,6 +147,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * Cache for which we provide service
    */
   private /* final */ InternalCache cache;
+
   private /* final */ CachedRegionHelper cacheHelper;
 
   /**
@@ -202,7 +204,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * @return true if cache appears
    */
   private boolean waitForCache() {
-    InternalCache c;
+    InternalCache cache;
     long tilt = System.currentTimeMillis() + MAX_CACHE_WAIT * 1000;
     for (;;) {
       if (quitting()) {
@@ -222,8 +224,8 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
             new Object[] {this, MAX_CACHE_WAIT}));
         return false;
       }
-      c = GemFireCacheImpl.getInstance();
-      if (c != null && !c.isClosed()) {
+      cache = GemFireCacheImpl.getInstance();
+      if (cache != null && !cache.isClosed()) {
         break;
       }
       boolean interrupted = Thread.interrupted();
@@ -237,8 +239,8 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
         }
       }
     } // for
-    this.cache = c;
-    this.cacheHelper = new CachedRegionHelper(c);
+    this.cache = cache;
+    this.cacheHelper = new CachedRegionHelper(cache);
     return true;
   }
 
@@ -287,7 +289,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
     OutputStream tmpOut = null;
     InputStream tmpIn = null;
     try {
-      /** Size of the server-to-client communication socket buffers */
+      // Size of the server-to-client communication socket buffers
       int socketBufferSize =
           Integer.getInteger("BridgeServer.SOCKET_BUFFER_SIZE", 32768).intValue();
 
@@ -340,7 +342,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
         // create a "server" memberId we currently don't know much about the
         // server.
         // Would be nice for it to send us its member id
-        // @todo - change the serverId to use the endpoint's getMemberId() which
+        // TODO: change the serverId to use the endpoint's getMemberId() which
         // returns a
         // DistributedMember (once gfecq branch is merged to trunk).
         MemberAttributes ma =
@@ -1159,21 +1161,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
       // message
       if (region.hasServerProxy()) {
         return;
-
-        // NOTE:
-        // As explained in the method description, this code is added as part
-        // of CQ bug fix. Cache server team needs to look into changes relating
-        // to local region.
-        //
-        // Locally invalidate the region
-        // region.basicBridgeClientInvalidate(callbackArgument,
-        // proxy.getProcessedMarker());
-
-        // if (logger.debugEnabled()) {
-        // logger.debug(toString() + ": Cleared region: " + regionName
-        // + " callbackArgument: " + callbackArgument);
-        // }
-
       }
 
     } catch (Exception e) {
@@ -1212,12 +1199,12 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
         // servers recursively
       }
 
-      // // CALLBACK TESTING PURPOSE ONLY ////
+      // CALLBACK TESTING PURPOSE ONLY
       if (PoolImpl.IS_INSTANTIATOR_CALLBACK) {
         ClientServerObserver bo = ClientServerObserverHolder.getInstance();
         bo.afterReceivingFromServer(eventId);
       }
-      // /////////////////////////////////////
+
     }
     // TODO bug: can the following catch be more specific?
     catch (Exception e) {
@@ -1233,7 +1220,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
     final boolean isDebugEnabled = logger.isDebugEnabled();
     try {
       int noOfParts = msg.getNumberOfParts();
-      // int numOfClasses = noOfParts - 3; // 1 for ds classname, 1 for ds id and 1 for eventId.
       if (isDebugEnabled) {
         logger.debug("{}: Received register dataserializer message of parts {}", getName(),
             noOfParts);
@@ -1244,8 +1230,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
           String dataSerializerClassName =
               (String) CacheServerHelper.deserialize(msg.getPart(i).getSerializedForm());
           int id = msg.getPart(i + 1).getInt();
-          InternalDataSerializer.register(dataSerializerClassName, false, eventId,
-              null/* context */, id);
+          InternalDataSerializer.register(dataSerializerClassName, false, eventId, null, id);
           // distribute is false because we don't want to propagate this to
           // servers recursively
 
@@ -1266,12 +1251,12 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
         }
       }
 
-      // // CALLBACK TESTING PURPOSE ONLY ////
+      // CALLBACK TESTING PURPOSE ONLY
       if (PoolImpl.IS_INSTANTIATOR_CALLBACK) {
         ClientServerObserver bo = ClientServerObserverHolder.getInstance();
         bo.afterReceivingFromServer(eventId);
       }
-      ///////////////////////////////////////
+
     }
     // TODO bug: can the following catch be more specific?
     catch (Exception e) {
@@ -1284,12 +1269,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
 
   /**
    * Processes message to invoke CQ listeners.
-   * 
-   * @param startMessagePart
-   * @param numCqParts
-   * @param messageType
-   * @param key
-   * @param value
    */
   private int processCqs(Message m, int startMessagePart, int numCqParts, int messageType,
       Object key, Object value) {
@@ -1299,7 +1278,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
 
   private int processCqs(Message m, int startMessagePart, int numCqParts, int messageType,
       Object key, Object value, byte[] delta, EventID eventId) {
-    // String[] cqs = new String[numCqs/2];
     HashMap cqs = new HashMap();
     final boolean isDebugEnabled = logger.isDebugEnabled();
 
@@ -1466,7 +1444,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
       handleException(message, e);
     }
   }
-
 
   private void handleTombstoneOperation(Message msg) {
     String regionName = "unknown";
@@ -1721,10 +1698,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
           // originating from the client
           // and by updating the last update stat, the ServerMonitor is less
           // likely to send pings...
-          // and the ClientHealthMonitor will cause a disconnect -- mthomas
-          // 10/18/2006
-
-          // this._endpoint.setLastUpdate();
+          // and the ClientHealthMonitor will cause a disconnect
 
         } catch (InterruptedIOException e) {
           // Per Sun's support web site, this exception seems to be peculiar
@@ -1839,13 +1813,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
     return socket.getLocalPort();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.apache.geode.distributed.internal.InternalDistributedSystem.DisconnectListener#onDisconnect
-   * (org.apache.geode.distributed.internal.InternalDistributedSystem)
-   */
   public void onDisconnect(InternalDistributedSystem sys) {
     stopUpdater();
   }
@@ -1854,15 +1821,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * true if the EndPoint represented by this updater thread has died.
    */
   private volatile boolean endPointDied = false;
-
-  /**
-   * Returns true if the end point represented by this updater is considered dead.
-   * 
-   * @return true if {@link #endpoint} died.
-   */
-  public boolean isEndPointDead() {
-    return this.endPointDied;
-  }
 
   private void verifySocketBufferSize(int requestedBufferSize, int actualBufferSize, String type) {
     if (actualBufferSize < requestedBufferSize) {
@@ -1944,11 +1902,9 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
     public long startTime() {
       return DistributionStats.getStatTime();
     }
-
   }
 
   public boolean isProcessing() {
-    // TODO Auto-generated method stub
     return continueProcessing.get();
   }
 }

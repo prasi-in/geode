@@ -32,7 +32,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.FunctionInvocationTargetException;
 import org.apache.geode.cache.execute.ResultCollector;
@@ -48,13 +47,11 @@ import org.apache.geode.management.internal.cli.util.DiskStoreNotFoundException;
 import org.apache.geode.management.internal.cli.util.MemberNotFoundException;
 import org.apache.geode.test.junit.categories.UnitTest;
 
-
 /**
  * The DiskStoreCommandsJUnitTest class is a test suite of test cases testing the contract and
  * functionality of the DiskStoreCommands class implementing commands in the GemFire shell (gfsh)
  * that access and modify disk stores in GemFire.
- * </p>
- * 
+ *
  * @see org.apache.geode.management.internal.cli.commands.DiskStoreCommands
  * @see org.apache.geode.management.internal.cli.domain.DiskStoreDetails
  * @see org.apache.geode.management.internal.cli.functions.DescribeDiskStoreFunction
@@ -87,7 +84,7 @@ public class DiskStoreCommandsJUnitTest {
     mockContext = null;
   }
 
-  private DiskStoreCommands createDiskStoreCommands(final Cache cache,
+  private DiskStoreCommands createDiskStoreCommands(final InternalCache cache,
       final DistributedMember distributedMember, final Execution functionExecutor) {
     return new TestDiskStoreCommands(cache, distributedMember, functionExecutor);
   }
@@ -102,7 +99,7 @@ public class DiskStoreCommandsJUnitTest {
     final String diskStoreName = "mockDiskStore";
     final String memberId = "mockMember";
 
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -145,7 +142,7 @@ public class DiskStoreCommandsJUnitTest {
     final String diskStoreName = "mockDiskStore";
     final String memberId = "mockMember";
 
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -175,7 +172,7 @@ public class DiskStoreCommandsJUnitTest {
     final String diskStoreName = "mockDiskStore";
     final String memberId = "mockMember";
 
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -211,7 +208,7 @@ public class DiskStoreCommandsJUnitTest {
     final String diskStoreName = "mockDiskStore";
     final String memberId = "mockMember";
 
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -247,7 +244,7 @@ public class DiskStoreCommandsJUnitTest {
     final String diskStoreName = "mockDiskStore";
     final String memberId = "mockMember";
 
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -289,7 +286,7 @@ public class DiskStoreCommandsJUnitTest {
 
   @Test
   public void testGetDiskStoreList() {
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockDistributedMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -338,7 +335,7 @@ public class DiskStoreCommandsJUnitTest {
 
   @Test(expected = RuntimeException.class)
   public void testGetDiskStoreListThrowsRuntimeException() {
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockDistributedMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -365,7 +362,7 @@ public class DiskStoreCommandsJUnitTest {
 
   @Test
   public void testGetDiskStoreListReturnsFunctionInvocationTargetExceptionInResults() {
-    final Cache mockCache = mockContext.mock(Cache.class, "Cache");
+    final InternalCache mockCache = mockContext.mock(InternalCache.class, "InternalCache");
 
     final DistributedMember mockDistributedMember =
         mockContext.mock(DistributedMember.class, "DistributedMember");
@@ -408,12 +405,12 @@ public class DiskStoreCommandsJUnitTest {
 
   private static class TestDiskStoreCommands extends DiskStoreCommands {
 
-    private final Cache cache;
+    private final InternalCache cache;
     private final DistributedMember distributedMember;
     private final Execution functionExecutor;
 
-    public TestDiskStoreCommands(final Cache cache, final DistributedMember distributedMember,
-        final Execution functionExecutor) {
+    public TestDiskStoreCommands(final InternalCache cache,
+        final DistributedMember distributedMember, final Execution functionExecutor) {
       assert cache != null : "The Cache cannot be null!";
       this.cache = cache;
       this.distributedMember = distributedMember;
@@ -421,7 +418,7 @@ public class DiskStoreCommandsJUnitTest {
     }
 
     @Override
-    protected Cache getCache() {
+    protected InternalCache getCache() {
       return this.cache;
     }
 

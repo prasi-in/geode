@@ -145,6 +145,7 @@ import org.apache.geode.internal.logging.LocalLogWriter;
 import org.apache.geode.internal.logging.LogWriterFactory;
 import org.apache.geode.internal.offheap.MemoryAllocator;
 import org.apache.geode.management.internal.JmxManagerAdvisor;
+import org.apache.geode.management.internal.RestAgent;
 import org.apache.geode.pdx.PdxInstance;
 import org.apache.geode.pdx.PdxInstanceFactory;
 import org.apache.geode.pdx.PdxSerializer;
@@ -1022,6 +1023,22 @@ public class CacheCreation implements InternalCache {
     return bridge;
   }
 
+  @Override
+  public void setReadSerialized(final boolean value) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public PdxInstanceFactory createPdxInstanceFactory(final String className,
+      final boolean expectDomainClass) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public void waitForRegisterInterestsInProgress() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
   void addDeclarableProperties(final Declarable declarable, final Properties properties) {
     this.declarablePropertiesMap.put(declarable, properties);
   }
@@ -1163,7 +1180,22 @@ public class CacheCreation implements InternalCache {
   }
 
   @Override
+  public RestAgent getRestAgent() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
   public Properties getDeclarableProperties(final Declarable declarable) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public void setRESTServiceRunning(final boolean isRESTServiceRunning) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public void close(final String reason, final boolean keepAlive, final boolean keepDS) {
     throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
   }
 

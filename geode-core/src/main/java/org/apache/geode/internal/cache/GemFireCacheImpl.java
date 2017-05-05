@@ -4406,6 +4406,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
   /**
    * Blocks until no register interests are in progress.
    */
+  @Override
   public void waitForRegisterInterestsInProgress() {
     // In *this* particular context, let the caller know that
     // his cache has been cancelled. doWait below would do that as
@@ -5169,6 +5170,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     return PdxInstanceFactoryImpl.newCreator(className, true);
   }
 
+  @Override
   public PdxInstanceFactory createPdxInstanceFactory(String className, boolean expectDomainClass) {
     return PdxInstanceFactoryImpl.newCreator(className, expectDomainClass);
   }

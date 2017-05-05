@@ -678,16 +678,14 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
 
   /**
    * initialize the event tracker. Not all region implementations want or need one of these. Regions
-   * that require one should reimplement this method and create one like so: {@code 
-   * 
-   * 
-  
-  <pre>
+   * that require one should reimplement this method and create one like so:
+   *
+   * <pre>
+   * {@code
    * this.eventTracker = new EventTracker(this.cache);
    * this.eventTracker.start();
-  </pre>
-  
-  }
+   * }
+   * </pre>
    */
   void createEventTracker() {
     // if LocalRegion is changed to have an event tracker, then the initialize()
@@ -696,7 +694,6 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
   }
 
   /**
-   * 
    * Other region classes may track events using different mechanisms than EventTrackers
    */
   EventTracker getEventTracker() {
@@ -1959,9 +1956,8 @@ public class LocalRegion extends AbstractRegion implements LoaderHelperFactory,
       boolean result = entry != null;
       if (result) {
         ReferenceCountHelper.skipRefCountTracking();
-        // no need to decompress since we only want to
+        // no need to decompress since we only want to know if we have an existing value
         Object val = entry.getTransformedValue();
-        // know if we have an existing value
         if (val instanceof StoredObject) {
           OffHeapHelper.release(val);
           ReferenceCountHelper.unskipRefCountTracking();
