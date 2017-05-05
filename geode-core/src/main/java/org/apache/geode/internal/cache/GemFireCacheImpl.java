@@ -932,6 +932,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     return this.isRESTServiceRunning;
   }
 
+  @Override
   public void setRESTServiceRunning(boolean isRESTServiceRunning) {
     this.isRESTServiceRunning = isRESTServiceRunning;
   }
@@ -941,6 +942,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * 
    * @return RestAgent
    */
+  @Override
   public RestAgent getRestAgent() {
     return this.restAgent;
   }
@@ -1925,6 +1927,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     close(false);
   }
 
+  @Override
   public void close(String reason, boolean keepAlive, boolean keepDS) {
     close(reason, null, keepAlive, keepDS);
   }
@@ -1972,6 +1975,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * 
    * @return the GatewaySender distributed lock service
    */
+  @Override
   public DistributedLockService getGatewaySenderLockService() {
     if (this.gatewayLockService == null) {
       synchronized (this.gatewayLockServiceLock) {
@@ -2751,10 +2755,12 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     return this.system.getSecurityInternalLogWriter();
   }
 
+  @Override
   public InternalLogWriter getInternalLogWriter() {
     return this.system.getInternalLogWriter();
   }
 
+  @Override
   public InternalLogWriter getSecurityInternalLogWriter() {
     return this.system.getSecurityInternalLogWriter();
   }
@@ -2804,6 +2810,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
    * @param declarable The declarable
    * @return Properties found for the given declarable
    */
+  @Override
   public Properties getDeclarableProperties(final Declarable declarable) {
     return this.declarablePropertiesMap.get(declarable);
   }
@@ -3204,6 +3211,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     return result;
   }
 
+  @Override
   public Set<LocalRegion> getApplicationRegions() {
     Set<LocalRegion> result = new HashSet<>();
     synchronized (this.rootRegions) {
@@ -3770,6 +3778,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     return addCacheServer(false);
   }
 
+  @Override
   public CacheServer addCacheServer(boolean isGatewayReceiver) {
     if (isClient()) {
       throw new UnsupportedOperationException("operation is not supported on a client cache");
@@ -3832,6 +3841,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     }
   }
 
+  @Override
   public void removeGatewaySender(GatewaySender sender) {
     if (isClient()) {
       throw new UnsupportedOperationException("operation is not supported on a client cache");
@@ -3852,6 +3862,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
     }
   }
 
+  @Override
   public void addGatewayReceiver(GatewayReceiver receiver) {
     if (isClient()) {
       throw new UnsupportedOperationException("operation is not supported on a client cache");
@@ -5084,6 +5095,7 @@ public class GemFireCacheImpl implements InternalCache, InternalClientCache, Has
   }
 
   // test hook
+  @Override
   public void setReadSerialized(boolean value) {
     this.cacheConfig.setPdxReadSerialized(value);
   }

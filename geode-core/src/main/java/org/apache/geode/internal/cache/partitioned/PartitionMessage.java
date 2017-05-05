@@ -53,6 +53,7 @@ import org.apache.geode.internal.cache.EntryEventImpl;
 import org.apache.geode.internal.cache.FilterRoutingInfo;
 import org.apache.geode.internal.cache.ForceReattemptException;
 import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.PartitionedRegion;
 import org.apache.geode.internal.cache.PartitionedRegionException;
 import org.apache.geode.internal.cache.PrimaryBucketException;
@@ -259,7 +260,7 @@ public abstract class PartitionMessage extends DistributionMessage
    * check to see if the cache is closing
    */
   public boolean checkCacheClosing(DistributionManager dm) {
-    GemFireCacheImpl cache = getGemFireCacheImpl();
+    InternalCache cache = getInternalCache();
     // return (cache != null && cache.isClosed());
     return cache == null || cache.isClosed();
   }
@@ -278,11 +279,11 @@ public abstract class PartitionMessage extends DistributionMessage
     return PartitionedRegion.getPRFromId(this.regionId);
   }
 
-  GemFireCacheImpl getGemFireCacheImpl() {
+  InternalCache getInternalCache() {
     return GemFireCacheImpl.getInstance();
   }
 
-  TXManagerImpl getTXManagerImpl(GemFireCacheImpl cache) {
+  TXManagerImpl getTXManagerImpl(InternalCache cache) {
     return cache.getTxManager();
   }
 
@@ -327,7 +328,7 @@ public abstract class PartitionMessage extends DistributionMessage
       }
       thr = UNHANDLED_EXCEPTION;
 
-      GemFireCacheImpl cache = getGemFireCacheImpl();
+      InternalCache cache = getInternalCache();
       if (cache == null) {
         throw new ForceReattemptException(
             LocalizedStrings.PartitionMessage_REMOTE_CACHE_IS_CLOSED_0.toLocalizedString());
@@ -862,7 +863,7 @@ public abstract class PartitionMessage extends DistributionMessage
    * For Distributed Tx
    */
   private void setIfTransactionDistributed() {
-    GemFireCacheImpl cache = GemFireCacheImpl.getInstance();
+    InternalCache cache = GemFireCacheImpl.getInstance();
     if (cache != null) {
       if (cache.getTxManager() != null) {
         this.isTransactionDistributed = cache.getTxManager().isDistributed();

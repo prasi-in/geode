@@ -37,6 +37,7 @@ import org.apache.geode.cache.execute.Execution;
 import org.apache.geode.cache.execute.FunctionInvocationTargetException;
 import org.apache.geode.cache.execute.ResultCollector;
 import org.apache.geode.distributed.DistributedMember;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.execute.AbstractExecution;
 import org.apache.geode.internal.util.CollectionUtils;
 import org.apache.geode.management.internal.cli.domain.IndexDetails;
@@ -207,7 +208,7 @@ public class IndexCommandsJUnitTest {
     }
 
     @Override
-    protected Set<DistributedMember> getMembers(final Cache cache) {
+    protected Set<DistributedMember> getMembers(final InternalCache cache) {
       assertSame(getCache(), cache);
       return Collections.emptySet();
     }

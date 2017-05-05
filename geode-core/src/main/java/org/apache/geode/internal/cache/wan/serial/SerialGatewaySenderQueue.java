@@ -54,7 +54,6 @@ import org.apache.geode.internal.cache.CachedDeserializable;
 import org.apache.geode.internal.cache.Conflatable;
 import org.apache.geode.internal.cache.DistributedRegion;
 import org.apache.geode.internal.cache.EntryEventImpl;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
 import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.InternalRegionArguments;
 import org.apache.geode.internal.cache.LocalRegion;
@@ -73,7 +72,6 @@ import org.apache.geode.pdx.internal.PeerTypeRegistration;
 
 /**
  * @since GemFire 7.0
- * 
  */
 public class SerialGatewaySenderQueue implements RegionQueue {
 
@@ -209,14 +207,12 @@ public class SerialGatewaySenderQueue implements RegionQueue {
     initializeRegion(abstractSender, listener);
     // Increment queue size. Fix for bug 51988.
     this.stats.incQueueSize(this.region.size());
-    this.removalThread = new BatchRemovalThread((GemFireCacheImpl) abstractSender.getCache());
+    this.removalThread = new BatchRemovalThread(abstractSender.getCache());
     this.removalThread.start();
     this.sender = abstractSender;
     if (logger.isDebugEnabled()) {
       logger.debug("{}: Contains {} elements", this, size());
     }
-
-
   }
 
   public Region<Long, AsyncEvent> getRegion() {
@@ -399,7 +395,7 @@ public class SerialGatewaySenderQueue implements RegionQueue {
     boolean wasEmpty = this.lastDispatchedKey == this.lastDestroyedKey;
     this.lastDispatchedKey = key;
     if (wasEmpty) {
-      this.notify();
+      notifyAll();
     }
 
     if (logger.isDebugEnabled()) {
@@ -425,7 +421,6 @@ public class SerialGatewaySenderQueue implements RegionQueue {
   }
 
   public Object peek() throws CacheException {
-    // resetLastPeeked();
     Object object = peekAhead();
     if (logger.isTraceEnabled()) {
       logger.trace("{}: Peeked {} -> {}", this, peekedIds, object);
@@ -451,7 +446,6 @@ public class SerialGatewaySenderQueue implements RegionQueue {
     }
     List<AsyncEvent> batch = new ArrayList<AsyncEvent>(size * 2); // why
                                                                   // *2?
-    // resetLastPeeked();
     while (batch.size() < size) {
       AsyncEvent object = peekAhead();
       // Conflate here
@@ -682,7 +676,6 @@ public class SerialGatewaySenderQueue implements RegionQueue {
 
   /**
    * Clear the list of peeked keys. The next peek will start again at the head key.
-   * 
    */
   public void resetLastPeeked() {
     this.peekedIds.clear();
@@ -693,7 +686,6 @@ public class SerialGatewaySenderQueue implements RegionQueue {
    * 
    * @throws CacheException
    */
-
   private Long getCurrentKey() {
     long currentKey;
     if (this.peekedIds.isEmpty()) {
@@ -732,7 +724,6 @@ public class SerialGatewaySenderQueue implements RegionQueue {
       return null;
     }
 
-
     // It's important here that we check where the current key
     // is in relation to the tail key before we check to see if the
     // object exists. The reason is that the tail key is basically
@@ -742,7 +733,7 @@ public class SerialGatewaySenderQueue implements RegionQueue {
     // If we check for the object, and then check the tail key, we could
     // skip objects.
 
-    // @todo don't do a get which updates the lru, instead just get the value
+    // TODO: don't do a get which updates the lru, instead just get the value
     // w/o modifying the LRU.
     // Note: getting the serialized form here (if it has overflowed to disk)
     // does not save anything since GatewayBatchOp needs to GatewayEventImpl
@@ -1022,12 +1013,14 @@ public class SerialGatewaySenderQueue implements RegionQueue {
      */
     private volatile boolean shutdown = false;
 
-    private final GemFireCacheImpl cache;
+    private final InternalCache cache;
 
     /**
      * Constructor : Creates and initializes the thread
+     * 
+     * @param c
      */
-    public BatchRemovalThread(GemFireCacheImpl c) {
+    public BatchRemovalThread(InternalCache c) {
       this.setDaemon(true);
       this.cache = c;
     }

@@ -12,24 +12,68 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.geode.internal.cache.tier.sockets;
 
-import org.apache.geode.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
+import java.net.ConnectException;
+import java.net.Socket;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLException;
+
+import org.apache.logging.log4j.Logger;
+
+import org.apache.geode.CancelException;
+import org.apache.geode.DataSerializer;
+import org.apache.geode.InvalidDeltaException;
+import org.apache.geode.StatisticDescriptor;
+import org.apache.geode.Statistics;
+import org.apache.geode.StatisticsType;
+import org.apache.geode.StatisticsTypeFactory;
+import org.apache.geode.SystemFailure;
 import org.apache.geode.cache.EntryNotFoundException;
 import org.apache.geode.cache.InterestResultPolicy;
 import org.apache.geode.cache.Operation;
 import org.apache.geode.cache.RegionDestroyedException;
 import org.apache.geode.cache.client.ServerRefusedConnectionException;
-import org.apache.geode.cache.client.internal.*;
+import org.apache.geode.cache.client.internal.ClientUpdater;
+import org.apache.geode.cache.client.internal.Endpoint;
+import org.apache.geode.cache.client.internal.EndpointManager;
+import org.apache.geode.cache.client.internal.GetEventValueOp;
+import org.apache.geode.cache.client.internal.PoolImpl;
+import org.apache.geode.cache.client.internal.QueueManager;
 import org.apache.geode.cache.query.internal.cq.CqService;
 import org.apache.geode.distributed.DistributedSystem;
-import org.apache.geode.distributed.internal.*;
+import org.apache.geode.distributed.internal.DistributionConfig;
+import org.apache.geode.distributed.internal.DistributionManager;
+import org.apache.geode.distributed.internal.DistributionStats;
+import org.apache.geode.distributed.internal.InternalDistributedSystem;
 import org.apache.geode.distributed.internal.InternalDistributedSystem.DisconnectListener;
+import org.apache.geode.distributed.internal.ServerLocation;
 import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
 import org.apache.geode.distributed.internal.membership.MemberAttributes;
-import org.apache.geode.internal.*;
-import org.apache.geode.internal.cache.*;
+import org.apache.geode.internal.Assert;
+import org.apache.geode.internal.InternalDataSerializer;
+import org.apache.geode.internal.InternalInstantiator;
+import org.apache.geode.internal.Version;
+import org.apache.geode.internal.cache.ClientServerObserver;
+import org.apache.geode.internal.cache.ClientServerObserverHolder;
+import org.apache.geode.internal.cache.EntryEventImpl;
+import org.apache.geode.internal.cache.EventID;
+import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.cache.LocalRegion;
 import org.apache.geode.internal.cache.tier.CachedRegionHelper;
 import org.apache.geode.internal.cache.tier.MessageType;
 import org.apache.geode.internal.cache.versions.ConcurrentCacheModificationException;
@@ -48,19 +92,6 @@ import org.apache.geode.internal.statistics.StatisticsTypeFactoryImpl;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.AuthenticationRequiredException;
 import org.apache.geode.security.GemFireSecurityException;
-import org.apache.logging.log4j.Logger;
-
-import javax.net.ssl.SSLException;
-import java.io.*;
-import java.net.ConnectException;
-import java.net.Socket;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <code>CacheClientUpdater</code> is a thread that processes update messages from a cache server
@@ -114,9 +145,8 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
   /**
    * Cache for which we provide service
    */
-  private /* final */ GemFireCacheImpl cache;
+  private /* final */ InternalCache cache;
   private /* final */ CachedRegionHelper cacheHelper;
-
 
   /**
    * Principle flag to signal thread's run loop to terminate
@@ -144,7 +174,8 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
   private boolean isOpCompleted;
 
   public final static String CLIENT_UPDATER_THREAD_NAME = "Cache Client Updater Thread ";
-  /*
+
+  /**
    * to enable test flag
    */
   public static boolean isUsedByTest;
@@ -154,20 +185,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * bytes.
    */
   public static boolean fullValueRequested = false;
-
-  // /**
-  // * True if this thread been initialized. Indicates that the run thread is
-  // * initialized and ready to process messages
-  // * <p>
-  // * TODO is this still needed?
-  // * <p>
-  // * Accesses synchronized via <code>this</code>
-  // *
-  // * @see #notifyInitializationComplete()
-  // * @see #waitForInitialization()
-  // */
-  // private boolean initialized = false;
-
 
   private final ServerLocation location;
 
@@ -185,7 +202,7 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
    * @return true if cache appears
    */
   private boolean waitForCache() {
-    GemFireCacheImpl c;
+    InternalCache c;
     long tilt = System.currentTimeMillis() + MAX_CACHE_WAIT * 1000;
     for (;;) {
       if (quitting()) {
@@ -463,52 +480,6 @@ public class CacheClientUpdater extends Thread implements ClientUpdater, Disconn
       EntryLogger.clearSource();
     }
   }
-
-  // /**
-  // * Waits for this thread to be initialized
-  // *
-  // * @return true if initialized; false if stopped before init
-  // */
-  // public boolean waitForInitialization() {
-  // boolean result = false;
-  // // Yogesh : waiting on this thread object is a bad idea
-  // // as when thread exits it notifies to the waiting threads.
-  // synchronized (this) {
-  // for (;;) {
-  // if (quitting()) {
-  // break;
-  // }
-  // boolean interrupted = Thread.interrupted();
-  // try {
-  // this.wait(100); // spurious wakeup ok // timed wait, should fix lost notification problem
-  // rahul.
-  // }
-  // catch (InterruptedException e) {
-  // interrupted = true;
-  // }
-  // finally {
-  // if (interrupted) {
-  // Thread.currentThread().interrupt();
-  // }
-  // }
-  // } // while
-  // // Even if we succeed, there is a risk that we were shut down
-  // // Can't check for cache; it isn't set yet :-(
-  // this.system.getCancelCriterion().checkCancelInProgress(null);
-  // result = this.continueProcessing;
-  // } // synchronized
-  // return result;
-  // }
-
-  // /**
-  // * @see #waitForInitialization()
-  // */
-  // private void notifyInitializationComplete() {
-  // synchronized (this) {
-  // this.initialized = true;
-  // this.notifyAll();
-  // }
-  // }
 
   /**
    * Notifies this thread to stop processing

@@ -36,6 +36,7 @@ import org.apache.geode.distributed.internal.DistributionManager;
 import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
 import org.apache.geode.internal.Version;
 import org.apache.geode.internal.cache.GemFireCacheImpl;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.cache.TXManagerImpl;
 import org.apache.geode.internal.cache.TXStateProxy;
 import org.apache.geode.internal.cache.control.HeapMemoryMonitor;
@@ -220,7 +221,7 @@ public class ExecuteFunction66 extends BaseCommand {
         if (logger.isDebugEnabled()) {
           logger.debug("Executing Function on Server: {} with context: {}", servConn, context);
         }
-        GemFireCacheImpl cache = (GemFireCacheImpl) servConn.getCache();
+        InternalCache cache = servConn.getCache();
         HeapMemoryMonitor hmm =
             ((InternalResourceManager) cache.getResourceManager()).getHeapMonitor();
         if (functionObject.optimizeForWrite() && cache != null && hmm.getState().isCritical()
@@ -329,14 +330,14 @@ public class ExecuteFunction66 extends BaseCommand {
                 .toString(fn.getId()));
       }
     } else {
-      /**
+      /*
        * if dm is null it mean cache is also null. Transactional function without cache cannot be
        * executed.
        */
       final TXStateProxy txState = TXManagerImpl.getCurrentTXState();
       Runnable functionExecution = new Runnable() {
         public void run() {
-          GemFireCacheImpl cache = null;
+          InternalCache cache = null;
           try {
             if (txState != null) {
               cache = GemFireCacheImpl.getExisting("executing function");

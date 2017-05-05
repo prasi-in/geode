@@ -41,6 +41,8 @@ import org.apache.geode.cache.client.internal.ClientMetadataService;
 import org.apache.geode.cache.query.QueryService;
 import org.apache.geode.cache.query.internal.QueryMonitor;
 import org.apache.geode.cache.query.internal.cq.CqService;
+import org.apache.geode.cache.server.CacheServer;
+import org.apache.geode.cache.wan.GatewayReceiver;
 import org.apache.geode.cache.wan.GatewaySender;
 import org.apache.geode.distributed.DistributedLockService;
 import org.apache.geode.distributed.internal.CacheTime;
@@ -56,8 +58,10 @@ import org.apache.geode.internal.cache.persistence.BackupManager;
 import org.apache.geode.internal.cache.persistence.PersistentMemberManager;
 import org.apache.geode.internal.cache.tier.sockets.CacheClientNotifier;
 import org.apache.geode.internal.cache.tier.sockets.ClientProxyMembershipID;
+import org.apache.geode.internal.logging.InternalLogWriter;
 import org.apache.geode.internal.offheap.MemoryAllocator;
 import org.apache.geode.management.internal.JmxManagerAdvisor;
+import org.apache.geode.management.internal.RestAgent;
 import org.apache.geode.pdx.internal.TypeRegistry;
 
 /**
@@ -274,4 +278,28 @@ public interface InternalCache extends Cache, Extensible<Cache>, CacheTime {
   boolean isQueryMonitorDisabledForLowMemory();
 
   boolean isRESTServiceRunning();
+
+  InternalLogWriter getInternalLogWriter();
+
+  InternalLogWriter getSecurityInternalLogWriter();
+
+  Set<LocalRegion> getApplicationRegions();
+
+  void removeGatewaySender(GatewaySender sender);
+
+  DistributedLockService getGatewaySenderLockService();
+
+  RestAgent getRestAgent();
+
+  Properties getDeclarableProperties(final Declarable declarable);
+
+  void setRESTServiceRunning(boolean isRESTServiceRunning);
+
+  void close(String reason, boolean keepAlive, boolean keepDS);
+
+  void addGatewayReceiver(GatewayReceiver receiver);
+
+  CacheServer addCacheServer(boolean isGatewayReceiver);
+
+  void setReadSerialized(boolean value);
 }

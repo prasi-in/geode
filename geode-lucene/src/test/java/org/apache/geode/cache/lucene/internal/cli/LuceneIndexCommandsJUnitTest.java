@@ -29,6 +29,8 @@ import java.util.Set;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.management.internal.cli.i18n.CliStrings;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
@@ -650,7 +652,7 @@ public class LuceneIndexCommandsJUnitTest {
     }
 
     @Override
-    protected Set<DistributedMember> getMembers(final Cache cache) {
+    protected Set<DistributedMember> getMembers(final InternalCache cache) {
       assertSame(getCache(), cache);
       return Collections.emptySet();
     }

@@ -14,22 +14,6 @@
  */
 package org.apache.geode.internal.cache.persistence;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.geode.InternalGemFireError;
-import org.apache.geode.cache.DiskStore;
-import org.apache.geode.cache.persistence.PersistentID;
-import org.apache.geode.distributed.DistributedSystem;
-import org.apache.geode.distributed.internal.DM;
-import org.apache.geode.distributed.internal.DistributionConfig;
-import org.apache.geode.distributed.internal.MembershipListener;
-import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
-import org.apache.geode.internal.ClassPathLoader;
-import org.apache.geode.internal.DeployedJar;
-import org.apache.geode.internal.JarDeployer;
-import org.apache.geode.internal.cache.DiskStoreImpl;
-import org.apache.geode.internal.cache.GemFireCacheImpl;
-import org.apache.geode.internal.i18n.LocalizedStrings;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -45,10 +29,25 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
+
+import org.apache.geode.InternalGemFireError;
+import org.apache.geode.cache.DiskStore;
+import org.apache.geode.cache.persistence.PersistentID;
+import org.apache.geode.distributed.DistributedSystem;
+import org.apache.geode.distributed.internal.DM;
+import org.apache.geode.distributed.internal.DistributionConfig;
+import org.apache.geode.distributed.internal.MembershipListener;
+import org.apache.geode.distributed.internal.membership.InternalDistributedMember;
+import org.apache.geode.internal.ClassPathLoader;
+import org.apache.geode.internal.DeployedJar;
+import org.apache.geode.internal.JarDeployer;
+import org.apache.geode.internal.cache.DiskStoreImpl;
+import org.apache.geode.internal.cache.InternalCache;
+import org.apache.geode.internal.i18n.LocalizedStrings;
+
 /**
  * This class manages the state an logic to backup a single cache.
- * 
- *
  */
 public class BackupManager implements MembershipListener {
 
@@ -59,11 +58,11 @@ public class BackupManager implements MembershipListener {
   public static final String USER_FILES = "user";
   public static final String CONFIG = "config";
   private InternalDistributedMember sender;
-  private GemFireCacheImpl cache;
+  private InternalCache cache;
   private CountDownLatch allowDestroys = new CountDownLatch(1);
   private volatile boolean isCancelled = false;
 
-  public BackupManager(InternalDistributedMember sender, GemFireCacheImpl gemFireCache) {
+  public BackupManager(InternalDistributedMember sender, InternalCache gemFireCache) {
     this.sender = sender;
     this.cache = gemFireCache;
   }
@@ -230,7 +229,6 @@ public class BackupManager implements MembershipListener {
         }
       }
 
-
       return persistentIds;
 
     } finally {
@@ -259,7 +257,7 @@ public class BackupManager implements MembershipListener {
       FileUtils.copyFile(new File(DistributedSystem.getPropertiesFile()), propertyBackup);
     }
 
-    // TODO sbawaska: should the gfsecurity.properties file be backed up?
+    // TODO: should the gfsecurity.properties file be backed up?
   }
 
   private void backupUserFiles(RestoreScript restoreScript, File backupDir) throws IOException {

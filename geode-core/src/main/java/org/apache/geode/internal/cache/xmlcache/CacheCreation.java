@@ -1137,6 +1137,36 @@ public class CacheCreation implements InternalCache {
     throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
   }
 
+  @Override
+  public InternalLogWriter getInternalLogWriter() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public InternalLogWriter getSecurityInternalLogWriter() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public Set<LocalRegion> getApplicationRegions() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public void removeGatewaySender(final GatewaySender sender) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public DistributedLockService getGatewaySenderLockService() {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
+  @Override
+  public Properties getDeclarableProperties(final Declarable declarable) {
+    throw new UnsupportedOperationException(LocalizedStrings.SHOULDNT_INVOKE.toLocalizedString());
+  }
+
   public void addGatewayReceiver(GatewayReceiver receiver) {
     this.gatewayReceivers.add(receiver);
   }

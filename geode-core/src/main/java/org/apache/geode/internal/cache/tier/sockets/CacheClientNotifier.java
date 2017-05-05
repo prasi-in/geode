@@ -12,7 +12,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.geode.internal.cache.tier.sockets;
 
 import static org.apache.geode.distributed.ConfigurationProperties.*;
@@ -79,6 +78,7 @@ import org.apache.geode.distributed.internal.MessageWithReply;
 import org.apache.geode.distributed.internal.ReplyMessage;
 import org.apache.geode.distributed.internal.ReplyProcessor21;
 import org.apache.geode.internal.ClassLoadUtil;
+import org.apache.geode.internal.cache.InternalCache;
 import org.apache.geode.internal.statistics.DummyStatisticsFactory;
 import org.apache.geode.internal.InternalDataSerializer;
 import org.apache.geode.internal.InternalInstantiator;
@@ -116,7 +116,6 @@ import org.apache.geode.internal.i18n.LocalizedStrings;
 import org.apache.geode.internal.logging.InternalLogWriter;
 import org.apache.geode.internal.logging.LogService;
 import org.apache.geode.internal.logging.log4j.LocalizedMessage;
-import org.apache.geode.internal.net.SocketCloser;
 import org.apache.geode.security.AccessControl;
 import org.apache.geode.security.AuthenticationFailedException;
 import org.apache.geode.security.AuthenticationRequiredException;
@@ -124,7 +123,6 @@ import org.apache.geode.security.AuthenticationRequiredException;
 /**
  * Class <code>CacheClientNotifier</code> works on the server and manages client socket connections
  * to clients requesting notification of updates and notifies them when updates occur.
- *
  *
  * @since GemFire 3.2
  */
@@ -1840,7 +1838,7 @@ public class CacheClientNotifier {
     ClientProxyMembershipID client = proxy.getProxyID();
     this._clientProxies.remove(client);
     this._connectionListener.queueRemoved();
-    ((GemFireCacheImpl) this.getCache()).cleanupForClient(this, client);
+    this.getCache().cleanupForClient(this, client);
     if (!(proxy.clientConflation == HandShake.CONFLATION_ON)) {
       ClientHealthMonitor chm = ClientHealthMonitor.getInstance();
       if (chm != null) {
@@ -2035,9 +2033,9 @@ public class CacheClientNotifier {
    * 
    * @return this <code>CacheClientNotifier</code>'s <code>Cache</code>
    */
-  protected Cache getCache() { // TODO:SYNC: looks wrong
+  protected InternalCache getCache() { // TODO:SYNC: looks wrong
     if (this._cache != null && this._cache.isClosed()) {
-      GemFireCacheImpl cache = GemFireCacheImpl.getInstance();
+      InternalCache cache = GemFireCacheImpl.getInstance();
       if (cache != null) {
         this._cache = cache;
         this.logWriter = cache.getInternalLogWriter();
@@ -2073,7 +2071,7 @@ public class CacheClientNotifier {
 
   /**
    * Constructor.
-   *
+   * 
    * @param cache The GemFire <code>Cache</code>
    * @param acceptorStats
    * @param maximumMessageCount
@@ -2082,11 +2080,11 @@ public class CacheClientNotifier {
    *        removed.
    * @param overflowAttributesList
    */
-  private CacheClientNotifier(Cache cache, CacheServerStats acceptorStats, int maximumMessageCount,
-      int messageTimeToLive, ConnectionListener listener, List overflowAttributesList,
-      boolean isGatewayReceiver) {
+  private CacheClientNotifier(InternalCache cache, CacheServerStats acceptorStats,
+      int maximumMessageCount, int messageTimeToLive, ConnectionListener listener,
+      List overflowAttributesList, boolean isGatewayReceiver) {
     // Set the Cache
-    this.setCache((GemFireCacheImpl) cache);
+    setCache(cache);
     this.acceptorStats = acceptorStats;
     this.socketCloser = new SocketCloser(1, 50); // we only need one thread per client and wait 50ms
                                                  // for close
@@ -2512,7 +2510,7 @@ public class CacheClientNotifier {
    * direct reference to _cache in CacheClientNotifier code. Instead, you should always use
    * <code>getCache()</code>
    */
-  private GemFireCacheImpl _cache;
+  private InternalCache _cache;
 
   private InternalLogWriter logWriter;
 
@@ -2631,9 +2629,8 @@ public class CacheClientNotifier {
     // lazily initialize haContainer in case this CCN instance was created by a gateway receiver
     if (overflowAttributesList != null
         && !HARegionQueue.HA_EVICTION_POLICY_NONE.equals(overflowAttributesList.get(0))) {
-      haContainer = new HAContainerRegion(_cache.getRegion(
-          Region.SEPARATOR + CacheServerImpl.clientMessagesRegion((GemFireCacheImpl) _cache,
-              (String) overflowAttributesList.get(0),
+      haContainer = new HAContainerRegion(_cache.getRegion(Region.SEPARATOR
+          + CacheServerImpl.clientMessagesRegion(_cache, (String) overflowAttributesList.get(0),
               ((Integer) overflowAttributesList.get(1)).intValue(),
               ((Integer) overflowAttributesList.get(2)).intValue(),
               (String) overflowAttributesList.get(3), (Boolean) overflowAttributesList.get(4))));
@@ -2664,10 +2661,9 @@ public class CacheClientNotifier {
   /**
    * @param _cache the _cache to set
    */
-  private void setCache(GemFireCacheImpl _cache) {
+  private void setCache(InternalCache _cache) {
     this._cache = _cache;
   }
-
 
   private class ExpireBlackListTask extends PoolTask {
     private ClientProxyMembershipID proxyID;

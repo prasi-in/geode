@@ -28,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.geode.InternalGemFireError;
 import org.apache.geode.InternalGemFireException;
 import org.apache.geode.cache.AttributesFactory;
-import org.apache.geode.cache.Cache;
 import org.apache.geode.cache.CacheWriterException;
 import org.apache.geode.cache.DataPolicy;
 import org.apache.geode.cache.DiskStore;
@@ -99,8 +98,10 @@ public class PeerTypeRegistration implements TypeRegistration {
    */
   private Map<PdxType, Integer> typeToId =
       Collections.synchronizedMap(new HashMap<PdxType, Integer>());
+
   private Map<EnumInfo, EnumId> enumToId =
       Collections.synchronizedMap(new HashMap<EnumInfo, EnumId>());
+
   private final Map<String, Set<PdxType>> classToType =
       new CopyOnWriteHashMap<String, Set<PdxType>>();
 
@@ -404,11 +405,11 @@ public class PeerTypeRegistration implements TypeRegistration {
 
   private void updateRegion(Object k, Object v) {
     Region<Object, Object> r = getIdToType();
-    Cache c = (Cache) r.getRegionService();
+    InternalCache cache = (InternalCache) r.getRegionService();
 
     checkDistributedTypeRegistryState();
 
-    TXManagerImpl txManager = (TXManagerImpl) c.getCacheTransactionManager();
+    TXManagerImpl txManager = (TXManagerImpl) cache.getCacheTransactionManager();
     TXStateProxy currentState = suspendTX();
     boolean state = useUDPMessagingIfNecessary();
     try {
@@ -452,7 +453,6 @@ public class PeerTypeRegistration implements TypeRegistration {
     } finally {
       resumeTX(currentState);
     }
-
   }
 
   public void addRemoteType(int typeId, PdxType type) {
@@ -626,8 +626,8 @@ public class PeerTypeRegistration implements TypeRegistration {
   }
 
   private TXStateProxy suspendTX() {
-    Cache c = (Cache) getIdToType().getRegionService();
-    TXManagerImpl txManager = (TXManagerImpl) c.getCacheTransactionManager();
+    InternalCache cache = (InternalCache) getIdToType().getRegionService();
+    TXManagerImpl txManager = (TXManagerImpl) cache.getCacheTransactionManager();
     return txManager.internalSuspend();
   }
 
@@ -748,7 +748,6 @@ public class PeerTypeRegistration implements TypeRegistration {
     return enums;
   }
 
-
   /**
    * adds a PdxType for a field to a {@code className => Set<PdxType>} map
    */
@@ -780,14 +779,14 @@ public class PeerTypeRegistration implements TypeRegistration {
     return null;
   }
 
-  /*
+  /**
    * For testing purpose
    */
   public Map<String, Set<PdxType>> getClassToType() {
     return classToType;
   }
 
-  /*
+  /**
    * test hook
    */
   @Override
@@ -813,7 +812,7 @@ public class PeerTypeRegistration implements TypeRegistration {
   }
 
   public static int getPdxRegistrySize() {
-    GemFireCacheImpl cache = GemFireCacheImpl.getExisting();
+    InternalCache cache = GemFireCacheImpl.getExisting();
     if (cache == null) {
       return 0;
     }
